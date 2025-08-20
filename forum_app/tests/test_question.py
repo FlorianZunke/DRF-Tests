@@ -54,6 +54,7 @@ class QuestionTests(APITestCase):
         excepted_data = QuestionSerializer(self.question).data
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
         self.assertDictEqual(response.data, excepted_data)
         self.assertJSONEqual(response.content, excepted_data)
 
