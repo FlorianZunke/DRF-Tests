@@ -4,7 +4,7 @@ from rest_framework import status
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 
-from forum_app.models import Question
+from forum_app.models import Question, Like
 from forum_app.api.serializers import QuestionSerializer, LikeSerializer
 
 #Test wird gestartet mit python manage.py test
@@ -22,25 +22,7 @@ class LikeTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
-    def test_post_like(self):
-        user = User.objects.create_user(username='testuser', password='testpassword')
-        question = Question.objects.create(title='Test Question', content='Test Content', author=user, category='frontend')
-
-        # LogIn über die TokenAuthentication
-        self.token = Token.objects.create(user=user)
-        self.client = APIClient()
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
-
-        url = reverse('like-list')
-        data = {
-            'question': question.id
-        }
-
-        response = self.client.post(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-
-    def test_get_like_detail(self):
+    def setUp(self):
         self.user = User.objects.create_user(username='testuser', password='testpassword')
         self.question = Question.objects.create(title='Test Question', content='Test Content', author=self.user, category='frontend')
 
@@ -49,13 +31,33 @@ class LikeTests(APITestCase):
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
 
-        like = LikeSerializer(data={'user': self.user.id, 'question': self.question.id})
-        like.is_valid(raise_exception=True)
-        like.save()
 
-        url = reverse("question-detail", kwargs={'pk': like.data['id']})
+
+    def test_post_like(self):
+        url = reverse('like-list')
+        data = {
+            'question': self.question.id
+        }
+
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(Like.objects.filter(user=self.user, question=self.question).exists())
+
+
+    def test_get_like_detail(self):
+        self.user = User.objects.create_user(username='testuser', password='testpassword')
+        self.question = Question.objects.create(title='Test Question', content='Test Content', author=self.user, category='frontend')
+        # Erstelle einen Like für den Test
+        self.like = Like.objects.create(user=self.user, question=self.question)
+        
+        # LogIn über die TokenAuthentication
+        self.token = Token.objects.create(user=self.user)
+        self.client = APIClient()
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+
+        url = reverse("like-detail", kwargs={'pk': self.like.id})
         response = self.client.get(url)
-        expected_data = LikeSerializer(like.instance).data
+        expected_data = LikeSerializer(self.like).data
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertDictEqual(response.data, expected_data)

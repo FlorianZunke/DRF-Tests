@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_filters',
     'rest_framework.authtoken',
     'forum_app'
 ]
@@ -139,11 +140,15 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '100/day',
         'user': '1000/day',
+        'question-scope': '8/day',
         'question': '10/day',
         'question-post': '2/day',
         'question-put': '2/day',
         'question-patch': '2/day',
         'question-delete': '2/day',
         'question-options': '10/day',
-    }
+    },
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend'
+    ]
 }
